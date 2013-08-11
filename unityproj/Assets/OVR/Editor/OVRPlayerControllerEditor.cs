@@ -61,7 +61,10 @@ public class OVRPlayerControllerEditor : Editor
 
 			OVREditorGUIUtility.Separator();
 			
-			m_Component.AllowSideMovement = EditorGUILayout.Toggle("Allow Side Movement", m_Component.AllowSideMovement);
+			m_Component.SideMovement       = (OVRPlayerController.SideMovementStyle)EditorGUILayout.EnumPopup("Side Movement Style", m_Component.SideMovement);
+			
+			OVREditorGUIUtility.Separator();
+			
 			m_Component.AxisAligned       = EditorGUILayout.Toggle("Axis Aligned", m_Component.AxisAligned);
 			m_Component.AlignAxis         = EditorGUILayout.Vector3Field("Align Axis", m_Component.AlignAxis);
 		}

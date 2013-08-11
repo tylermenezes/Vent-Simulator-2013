@@ -37,6 +37,12 @@ using System.Collections.Generic;
 //
 public class OVRPlayerController : OVRComponent
 {
+	public enum SideMovementStyle {
+		None,
+		Strafe,
+		Rotate
+	}
+	
 	protected CharacterController 	Controller 		 = null;
 	protected OVRCameraController 	CameraController = null;
 
@@ -49,7 +55,7 @@ public class OVRPlayerController : OVRComponent
 	
 	public bool AxisAligned	   	   = true;
 	public Vector3 AlignAxis	   = new Vector3(0,0,1);
-	public bool AllowSideMovement  = false;
+	public SideMovementStyle SideMovement  = SideMovementStyle.Rotate;
 		
 	private float   MoveScale 	   = 1.0f;
 	private Vector3 MoveThrottle   = Vector3.zero;
@@ -298,9 +304,6 @@ public class OVRPlayerController : OVRComponent
 			} else {
 				float leftAxisY = 
 					OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
-					
-				float leftAxisX = 
-				OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftXAxis);
 							
 				if(leftAxisY > 0.0f)
 		    		MoveThrottle += leftAxisY *
@@ -309,24 +312,36 @@ public class OVRPlayerController : OVRComponent
 				if(leftAxisY < 0.0f)
 		    		MoveThrottle += Mathf.Abs(leftAxisY) *		
 					DirXform.TransformDirection(Vector3.back * moveInfluence) * BackAndSideDampen;
-					
-				if (AllowSideMovement) {
-					if(leftAxisX < 0.0f)
+			}
+			
+			
+			
+			
+				
+			float leftAxisX = 
+				OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftXAxis);
+			
+			switch (SideMovement) {
+				case SideMovementStyle.None:
+					break;
+				case SideMovementStyle.Rotate:
+					YRotation += leftAxisX * rotateInfluence;
+					AlignAxis = RotateY(AlignAxis, (Mathf.PI * leftAxisX * rotateInfluence)/180);
+					break;
+				case SideMovementStyle.Strafe:
+					if(leftAxisX < 0.0f) {
 			    		MoveThrottle += Mathf.Abs(leftAxisX) *
 						DirXform.TransformDirection(Vector3.left * moveInfluence) * BackAndSideDampen;
+					}
 						
-					if(leftAxisX > 0.0f)
+					if(leftAxisX > 0.0f) {
 						MoveThrottle += leftAxisX *
 						DirXform.TransformDirection(Vector3.right * moveInfluence) * BackAndSideDampen;
-				}
+					}
+				
+					break;
 			}
 		}
-			
-		float rightAxisX = 
-		OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.RightXAxis);
-			
-		// Rotate
-		YRotation += rightAxisX * rotateInfluence;    
 		
 		// Update cameras direction and rotation
 		SetCameras();
@@ -431,6 +446,21 @@ public class OVRPlayerController : OVRComponent
 	{
 		HaltUpdateMovement = haltUpdateMovement;
 	}
+	
+    private static Vector3 RotateY( Vector3 v, float angle )
+
+    {
+        float sin = Mathf.Sin( angle );
+        float cos = Mathf.Cos( angle );
+        
+        float tx = v.x;
+		float tz = v.z;
+
+        v.x = (cos * tx) + (sin * tz);
+        v.z = (cos * tz) - (sin * tx);
+		return v;
+
+    }
 
 }
 
