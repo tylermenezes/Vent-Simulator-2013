@@ -53,6 +53,9 @@ public class OVRPlayerController : OVRComponent
 	public float RotationAmount    = 1.5f;
 	public float GravityModifier   = 0.379f;
 	
+	public float PullSpeed      = 0.2f;
+	public float PullPause      = 1f;
+	
 	public bool AxisAligned	   	   = true;
 	public Vector3 AlignAxis	   = new Vector3(0,0,1);
 	public SideMovementStyle SideMovement  = SideMovementStyle.Rotate;
@@ -190,12 +193,17 @@ public class OVRPlayerController : OVRComponent
 		// sliding the rotation for a more natural movement and body visual
 		UpdatePlayerForwardDirTransform();
 	}
+	
+	public static bool playerIsMoving = true;
 		
 	// UpdateMovement
 	//
 	// COnsolidate all movement code here
 	//
+	private bool controllerAlreadyLockedOut = false;
+	private bool controllerIsLockedOut = false;
 	static float sDeltaRotationOld = 0.0f;
+	private float pullTimer = 0.0f;
 	public virtual void UpdateMovement()
 	{
 		// Do not apply input if we are showing a level selection display
@@ -288,6 +296,35 @@ public class OVRPlayerController : OVRComponent
 		// Run!
 		moveInfluence *= 1.0f + 
 					     OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftTrigger);
+		
+		
+		
+		// Pull Speed
+		moveInfluence *= Mathf.Sin(pullTimer);
+		pullTimer = pullTimer + PullSpeed;
+		
+	    if (pullTimer > (Mathf.PI + (PullPause * Mathf.PI))) { 
+	       pullTimer = 0;
+			controllerIsLockedOut = false;
+	    } else if (pullTimer >= Mathf.PI) {
+			moveInfluence = 0;
+		}
+		
+		if (OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis) == 0) {
+			if (!controllerAlreadyLockedOut) {
+				controllerAlreadyLockedOut = true;
+				controllerIsLockedOut = true;
+			}
+		} else {
+			if (!controllerIsLockedOut && controllerAlreadyLockedOut) {
+				pullTimer = 0;
+				controllerAlreadyLockedOut = false;
+			}
+		}
+		
+		if (controllerIsLockedOut) {
+			moveInfluence = 0;	
+		}
 			
 		// Move
 		if(DirXform != null)
@@ -296,22 +333,30 @@ public class OVRPlayerController : OVRComponent
 				float leftAxisY = 
 					OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
 							
-				if(leftAxisY > 0.0f)
+				if(leftAxisY > 0.0f){
 		    		MoveThrottle += leftAxisY * (AlignAxis) * moveInfluence;
+					playerIsMoving = true;
+				}
 					
-				if(leftAxisY < 0.0f)
+				if(leftAxisY < 0.0f) {
 		    		MoveThrottle += Mathf.Abs(leftAxisY) * (-1 * AlignAxis) * moveInfluence * BackAndSideDampen;
+					playerIsMoving = true;
+				}
 			} else {
 				float leftAxisY = 
 					OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
 							
-				if(leftAxisY > 0.0f)
+				if(leftAxisY > 0.0f) {
 		    		MoveThrottle += leftAxisY *
 					DirXform.TransformDirection(Vector3.forward * moveInfluence);
+					playerIsMoving = true;
+				}
 					
-				if(leftAxisY < 0.0f)
+				if(leftAxisY < 0.0f) {
 		    		MoveThrottle += Mathf.Abs(leftAxisY) *		
 					DirXform.TransformDirection(Vector3.back * moveInfluence) * BackAndSideDampen;
+					playerIsMoving = true;
+				}
 			}
 			
 			
@@ -327,20 +372,29 @@ public class OVRPlayerController : OVRComponent
 				case SideMovementStyle.Rotate:
 					YRotation += leftAxisX * rotateInfluence;
 					AlignAxis = RotateY(AlignAxis, (Mathf.PI * leftAxisX * rotateInfluence)/180);
+					if (leftAxisX > 0) {
+						playerIsMoving = true;
+					}
 					break;
 				case SideMovementStyle.Strafe:
 					if(leftAxisX < 0.0f) {
 			    		MoveThrottle += Mathf.Abs(leftAxisX) *
 						DirXform.TransformDirection(Vector3.left * moveInfluence) * BackAndSideDampen;
+						playerIsMoving = true;
 					}
 						
 					if(leftAxisX > 0.0f) {
 						MoveThrottle += leftAxisX *
 						DirXform.TransformDirection(Vector3.right * moveInfluence) * BackAndSideDampen;
+						playerIsMoving = true;
 					}
 				
 					break;
 			}
+		}
+		
+		if (moveInfluence == 0) {
+			playerIsMoving = false;
 		}
 		
 		// Update cameras direction and rotation

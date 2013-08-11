@@ -2,39 +2,38 @@
 using System.Collections;
 
 public class ViewBob : MonoBehaviour {
-	
-	public float 		BobbingSpeed 	= 0.1f;
-	public float 		BobbingAmount	= 0.4f;
-	public float 		BobbingMidpoint	= 4.0f;
+	public float 		Speed		= 0.025f;
+	public bool			IsFullWave	= true;
+	public Vector3		Amount		= new Vector3(1,0,0);
 	
 	private float timer = 0.0f;
 	public void Update()
-	{	
-		var viewBobTimer = 0.0f;
-		var waveslice = 0.0; 
-	    var horizontal = OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis); 
-	    var vertical = OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftXAxis); 
+	{
 		var position = transform.localPosition;
-	    if (Mathf.Abs(horizontal) == 0 && Mathf.Abs(vertical) == 0) { 
-	       timer = 0.0f; 
-	    } 
-	    else { 
-	       waveslice = Mathf.Sin(timer); 
-	       timer = timer + BobbingSpeed; 
-	       if (timer > Mathf.PI * 2) { 
-	          timer = timer - (Mathf.PI * 2); 
-	       } 
-	    } 
-	    if (waveslice != 0) { 
-	       var translateChange = (float)waveslice * BobbingAmount; 
-	       var totalAxes = Mathf.Abs(horizontal) + Mathf.Abs(vertical); 
-	       totalAxes = Mathf.Clamp (totalAxes, 0.0f, 1.0f); 
-	       translateChange = totalAxes * translateChange; 
-	       position.y = (float)BobbingMidpoint + translateChange; 
-	    } 
-	    else { 
-	       position.y = BobbingMidpoint; 
-	    } 
+		if (!OVRPlayerController.playerIsMoving) {
+			if (timer == 0 || Mathf.Abs(timer - Mathf.PI) < 0.01) {
+				return;
+			}
+		}
+		
+		float moveCyclePercent = Mathf.Sin(timer);
+		timer += Speed;
+		
+		if (timer > Mathf.PI * (IsFullWave ? 2 : 1)) {
+			timer = 0.0f;
+		}
+		
+		if (Amount.x != 0) {
+			position.x = Amount.x * moveCyclePercent;
+		}
+		
+		if (Amount.y != 0) {
+			position.y = Amount.y * moveCyclePercent;
+		}
+		
+		if (Amount.z != 0) {
+			position.z = Amount.z * moveCyclePercent;
+		}
 		
 		transform.localPosition = position;
 	}

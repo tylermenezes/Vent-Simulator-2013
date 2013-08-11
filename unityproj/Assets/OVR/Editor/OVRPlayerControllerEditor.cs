@@ -58,6 +58,11 @@ public class OVRPlayerControllerEditor : Editor
 			OVREditorGUIUtility.Separator();
 
 			m_Component.GravityModifier = EditorGUILayout.Slider("Gravity Modifier", m_Component.GravityModifier, 0, 1);
+			
+			OVREditorGUIUtility.Separator();
+			
+			m_Component.PullSpeed    = EditorGUILayout.Slider("Pull Speed", m_Component.PullSpeed, 0, 1);
+			m_Component.PullPause    = EditorGUILayout.Slider("Pull Rest Cycles", m_Component.PullPause, 0, 2);
 
 			OVREditorGUIUtility.Separator();
 			
