@@ -46,6 +46,10 @@ public class OVRPlayerController : OVRComponent
 	public float JumpForce 		   = 0.3f;
 	public float RotationAmount    = 1.5f;
 	public float GravityModifier   = 0.379f;
+	
+	public bool AxisAligned	   	   = true;
+	public Vector3 AlignAxis	   = new Vector3(0,0,1);
+	public bool AllowSideMovement  = false;
 		
 	private float   MoveScale 	   = 1.0f;
 	private Vector3 MoveThrottle   = Vector3.zero;
@@ -64,7 +68,7 @@ public class OVRPlayerController : OVRComponent
 	// We can adjust these to influence speed and rotation of player controller
 	private float MoveScaleMultiplier     = 1.0f; 
 	private float RotationScaleMultiplier = 1.0f; 
-	private bool  AllowMouseRotation      = true;
+	private bool  AllowMouseRotation      = false;
 	private bool  HaltUpdateMovement      = false;
 	
 	// TEST: Get Y from second sensor
@@ -282,28 +286,40 @@ public class OVRPlayerController : OVRComponent
 		// Move
 		if(DirXform != null)
 		{
-			float leftAxisY = 
-				OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
-				
-			float leftAxisX = 
-			OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftXAxis);
+			if (AxisAligned) {
+				float leftAxisY = 
+					OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
+							
+				if(leftAxisY > 0.0f)
+		    		MoveThrottle += leftAxisY * (AlignAxis) * moveInfluence;
+					
+				if(leftAxisY < 0.0f)
+		    		MoveThrottle += Mathf.Abs(leftAxisY) * (-1 * AlignAxis) * moveInfluence * BackAndSideDampen;
+			} else {
+				float leftAxisY = 
+					OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftYAxis);
+					
+				float leftAxisX = 
+				OVRGamepadController.GPC_GetAxis((int)OVRGamepadController.Axis.LeftXAxis);
+							
+				if(leftAxisY > 0.0f)
+		    		MoveThrottle += leftAxisY *
+					DirXform.TransformDirection(Vector3.forward * moveInfluence);
+					
+				if(leftAxisY < 0.0f)
+		    		MoveThrottle += Mathf.Abs(leftAxisY) *		
+					DirXform.TransformDirection(Vector3.back * moveInfluence) * BackAndSideDampen;
+					
+				if (AllowSideMovement) {
+					if(leftAxisX < 0.0f)
+			    		MoveThrottle += Mathf.Abs(leftAxisX) *
+						DirXform.TransformDirection(Vector3.left * moveInfluence) * BackAndSideDampen;
 						
-			if(leftAxisY > 0.0f)
-	    		MoveThrottle += leftAxisY *
-				DirXform.TransformDirection(Vector3.forward * moveInfluence);
-				
-			if(leftAxisY < 0.0f)
-	    		MoveThrottle += Mathf.Abs(leftAxisY) *		
-				DirXform.TransformDirection(Vector3.back * moveInfluence) * BackAndSideDampen;
-				
-			if(leftAxisX < 0.0f)
-	    		MoveThrottle += Mathf.Abs(leftAxisX) *
-				DirXform.TransformDirection(Vector3.left * moveInfluence) * BackAndSideDampen;
-				
-			if(leftAxisX > 0.0f)
-				MoveThrottle += leftAxisX *
-				DirXform.TransformDirection(Vector3.right * moveInfluence) * BackAndSideDampen;
-
+					if(leftAxisX > 0.0f)
+						MoveThrottle += leftAxisX *
+						DirXform.TransformDirection(Vector3.right * moveInfluence) * BackAndSideDampen;
+				}
+			}
 		}
 			
 		float rightAxisX = 
@@ -312,8 +328,8 @@ public class OVRPlayerController : OVRComponent
 		// Rotate
 		YRotation += rightAxisX * rotateInfluence;    
 		
-	// Update cameras direction and rotation
-	SetCameras();
+		// Update cameras direction and rotation
+		SetCameras();
 
 	}
 

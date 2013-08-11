@@ -60,6 +60,10 @@ public class OVRPlayerControllerEditor : Editor
 			m_Component.GravityModifier = EditorGUILayout.Slider("Gravity Modifier", m_Component.GravityModifier, 0, 1);
 
 			OVREditorGUIUtility.Separator();
+			
+			m_Component.AllowSideMovement = EditorGUILayout.Toggle("Allow Side Movement", m_Component.AllowSideMovement);
+			m_Component.AxisAligned       = EditorGUILayout.Toggle("Axis Aligned", m_Component.AxisAligned);
+			m_Component.AlignAxis         = EditorGUILayout.Vector3Field("Align Axis", m_Component.AlignAxis);
 		}
 		
 		if (GUI.changed)
